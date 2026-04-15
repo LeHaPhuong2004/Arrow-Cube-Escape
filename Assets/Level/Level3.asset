@@ -12,11 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2e3597ef1835b349984a1281c9abb79, type: 3}
   m_Name: Level3
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
-  gridSize: 5
+  optimalSteps: 10
+  gridSize: 6
   arrows:
-  - position: {x: 4, y: 3}
+  - position: {x: 1, y: 1}
     direction: 1
-  - position: {x: 2, y: 3}
-    direction: 2
+  - position: {x: 2, y: 1}
+    direction: 3
+  - position: {x: 2, y: 2}
+    direction: 3
   - position: {x: 3, y: 2}
     direction: 2
+  - position: {x: 1, y: 3}
+    direction: 4
+  - position: {x: 2, y: 3}
+    direction: 1
+  - position: {x: 3, y: 3}
+    direction: 2
+  - position: {x: 5, y: 2}
+    direction: 3
+  - position: {x: 4, y: 3}
+    direction: 1
+  - position: {x: 4, y: 4}
+    direction: 3

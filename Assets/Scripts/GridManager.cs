@@ -11,7 +11,7 @@ public class GridManager : MonoBehaviour
     private int stepCount = 0;
     private bool isMoving = false;
     public const int GRID_SIZE = 5;
-
+    public int unlockedLevel;
     public GameObject arrowPrefab;
     public float cellSize = 1.5f;
 
@@ -21,7 +21,8 @@ public class GridManager : MonoBehaviour
 
     void Start()
     {
-        InitGrid();
+        PlayerPrefs.DeleteAll(); // để tạm de reset level tiện debug
+        unlockedLevel = PlayerPrefs.GetInt("UnlockedLevel", 0);
     }
 
     void InitGrid()
@@ -39,9 +40,9 @@ public class GridManager : MonoBehaviour
     void SpawnAllArrows()
     {
 
-        for (int x = 0; x < GRID_SIZE; x++)
+        for (int x = 0; x < currentLevel.gridSize; x++)
         {
-            for (int y = 0; y < GRID_SIZE; y++)
+            for (int y = 0; y < currentLevel.gridSize; y++)
             {
                 if (grid[x, y] != null)
                 {
@@ -66,8 +67,8 @@ public class GridManager : MonoBehaviour
 
     Vector3 GridToWorld(Vector2Int pos)
     {
-      
-        float offset = (GRID_SIZE - 1) * cellSize / 2f;
+
+        float offset = (currentLevel.gridSize - 1) * cellSize / 2f;
 
         float x = pos.x * cellSize - offset;
         float y = pos.y * cellSize - offset;
@@ -107,9 +108,9 @@ public class GridManager : MonoBehaviour
     }
     bool CheckWin()
     {
-        for (int x = 0; x < GRID_SIZE; x++)
+        for (int x = 0; x < currentLevel.gridSize; x++)
         {
-            for (int y = 0; y < GRID_SIZE; y++)
+            for (int y = 0; y < currentLevel.gridSize; y++)
             {
                 if (grid[x, y] != null && !grid[x, y].isRemoved)
                 {
@@ -171,20 +172,35 @@ public class GridManager : MonoBehaviour
 
     bool IsOutOfBounds(Vector2Int pos)
     {
-        return pos.x < 0 || pos.x >= GRID_SIZE ||
-               pos.y < 0 || pos.y >= GRID_SIZE;
+        return pos.x < 0 || pos.x >= currentLevel.gridSize ||
+       pos.y < 0 || pos.y >= currentLevel.gridSize;
     }
+    private bool isLoading = false;
 
+    public void LoadLevel(int index)
+    {
+        if (isLoading) return;
+        isLoading = true;
+
+        currentLevelIndex = index;
+        currentLevel = levels[index];
+
+        ResetLevel();
+
+
+        isLoading = false;
+    }
     IEnumerator MoveArrowAnimated(Vector2Int start, List<Vector2Int> path)
     {
         isMoving = true;
 
         ArrowView view = viewMap[start];
+        if (view == null) yield break;
 
         Vector3 finalPos = GridToWorld(path[path.Count - 1]);
 
-        float duration = 0.4f; 
-
+        float duration = 0.4f;
+        view.transform.DOKill();
         view.transform.DOMove(finalPos, duration)
             .SetEase(Ease.OutCubic);
 
@@ -201,6 +217,7 @@ public class GridManager : MonoBehaviour
 
        
         grid[start.x, start.y].isRemoved = true;
+        view.transform.DOKill();
         Destroy(view.gameObject);
         viewMap.Remove(start);
 
@@ -208,7 +225,15 @@ public class GridManager : MonoBehaviour
 
         if (CheckWin())
         {
-            int stars = CalculateStars(); 
+            int stars = CalculateStars();
+
+            if (currentLevelIndex >= unlockedLevel)
+            {
+                unlockedLevel = currentLevelIndex + 1;
+
+                PlayerPrefs.SetInt("UnlockedLevel", unlockedLevel);
+                PlayerPrefs.Save();
+            }
 
             uIManager.ShowWin(stars);
         }
@@ -216,34 +241,35 @@ public class GridManager : MonoBehaviour
 
     public void NextLevel()
     {
-
-
         currentLevelIndex++;
-        Debug.Log("Index: " + currentLevelIndex);
-        Debug.Log("Count: " + levels.Count);
+
         if (currentLevelIndex >= levels.Count)
         {
             currentLevelIndex = 0;
         }
 
-        currentLevel = levels[currentLevelIndex];
-
-        ResetLevel();
-
+        LoadLevel(currentLevelIndex); 
     }
-    void ResetLevel()
+    public void ResetLevel()
     {
         stepCount = 0;
+        isMoving = false;
+
+        StopAllCoroutines();
+        DOTween.KillAll();
 
         foreach (var v in viewMap.Values)
         {
-            Destroy(v.gameObject);
+            if (v != null)
+                Destroy(v.gameObject);
         }
 
         viewMap.Clear();
 
         InitGrid();
+
+        uIManager.UpdateStep(stepCount, currentLevel.optimalSteps);
     }
 
-    
+
 }

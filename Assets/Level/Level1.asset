@@ -15,11 +15,13 @@ MonoBehaviour:
   optimalSteps: 5
   gridSize: 5
   arrows:
-  - position: {x: 2, y: 2}
+  - position: {x: 3, y: 2}
     direction: 1
-  - position: {x: 1, y: 4}
+  - position: {x: 1, y: 3}
     direction: 2
-  - position: {x: 4, y: 3}
+  - position: {x: 4, y: 1}
     direction: 3
   - position: {x: 2, y: 3}
     direction: 3
+  - position: {x: 1, y: 2}
+    direction: 4
