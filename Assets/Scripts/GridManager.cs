@@ -66,8 +66,7 @@ public class GridManager : MonoBehaviour
 
     Vector3 GridToWorld(Vector2Int pos)
     {
-        // Tính toán độ lệch (Offset) để đưa tâm Grid về (0,0)
-        // Công thức: (Số ô - 1) * cellSize / 2
+      
         float offset = (GRID_SIZE - 1) * cellSize / 2f;
 
         float x = pos.x * cellSize - offset;
@@ -78,23 +77,29 @@ public class GridManager : MonoBehaviour
 
     public void OnArrowClicked(Vector2Int pos)
     {
-        if (isMoving) return; // 🔥 chặn spam
+        if (isMoving) return;
 
         var path = GetSlidePath(pos);
 
+        stepCount++; 
+        uIManager.UpdateStep(stepCount, currentLevel.optimalSteps);
+
         if (path == null)
         {
-            Debug.Log("❌ BLOCKED");
+            Debug.Log("block");
+
+         
+            if (viewMap.ContainsKey(pos))
+            {
+                viewMap[pos].PlayBlockedFeedback();
+            }
+
             return;
         }
 
-        Debug.Log("✅ MOVE");
+        Debug.Log("move");
 
         StartCoroutine(MoveArrowAnimated(pos, path));
-
-        stepCount++;
-        uIManager.UpdateStep(stepCount, currentLevel.optimalSteps);
-        Debug.Log("Step: " + stepCount);
     }
     public void RestartLevel()
     {
@@ -178,14 +183,14 @@ public class GridManager : MonoBehaviour
 
         Vector3 finalPos = GridToWorld(path[path.Count - 1]);
 
-        float duration = 0.4f; // chuẩn đề
+        float duration = 0.4f; 
 
         view.transform.DOMove(finalPos, duration)
             .SetEase(Ease.OutCubic);
 
         yield return new WaitForSeconds(duration);
 
-        // 👉 bay ra ngoài 1 chút (cho đẹp)
+       
         Vector2Int dir = GetDirectionVector(grid[start.x, start.y].direction);
         Vector3 outPos = finalPos + new Vector3(dir.x, dir.y, 0) * cellSize;
 
@@ -194,7 +199,7 @@ public class GridManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.2f);
 
-        // remove
+       
         grid[start.x, start.y].isRemoved = true;
         Destroy(view.gameObject);
         viewMap.Remove(start);
@@ -203,7 +208,7 @@ public class GridManager : MonoBehaviour
 
         if (CheckWin())
         {
-            int stars = CalculateStars(); // 🔥 tính sao
+            int stars = CalculateStars(); 
 
             uIManager.ShowWin(stars);
         }
