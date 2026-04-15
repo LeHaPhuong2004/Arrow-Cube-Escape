@@ -1,0 +1,18 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+[System.Serializable]
+public class ArrowSpawnData
+{
+    public Vector2Int position;
+    public Direction direction;
+}
+
+[CreateAssetMenu(fileName = "LevelData", menuName = "Game/Level")]
+public class LevelData : ScriptableObject
+{
+    public int optimalSteps = 5;
+    public int gridSize = 5;
+    public List<ArrowSpawnData> arrows;
+
+}
