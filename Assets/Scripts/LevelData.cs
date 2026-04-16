@@ -1,10 +1,11 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
 public class ArrowSpawnData
 {
     public Vector2Int position;
+    public float zOffset; 
     public Direction direction;
 }
 

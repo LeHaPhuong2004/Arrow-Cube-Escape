@@ -2,6 +2,7 @@
 using UnityEngine;
 using DG.Tweening;
 using System.Collections;
+using static UnityEditor.PlayerSettings;
 public class GridManager : MonoBehaviour
 {
     public UIManager uIManager;
@@ -14,9 +15,9 @@ public class GridManager : MonoBehaviour
     public int unlockedLevel;
     public GameObject arrowPrefab;
     public float cellSize = 1.5f;
-
+    public CubeController cubeController;
     public ArrowData[,] grid;
-
+    public Transform faceRoot;
     private Dictionary<Vector2Int, ArrowView> viewMap = new Dictionary<Vector2Int, ArrowView>();
 
     void Start()
@@ -54,15 +55,27 @@ public class GridManager : MonoBehaviour
 
     void SpawnArrow(Vector2Int pos)
     {
+        // tìm arrow data tương ứng
+        ArrowSpawnData arrow = currentLevel.arrows.Find(a => a.position == pos);
 
         Vector3 worldPos = GridToWorld(pos);
 
-        GameObject obj = Instantiate(arrowPrefab, worldPos, Quaternion.identity);
+        if (arrow != null)
+        {
+            worldPos.z += arrow.zOffset;
+        }
+
+        GameObject obj = Instantiate(arrowPrefab);
+        obj.transform.position = worldPos;
+        obj.transform.rotation = Quaternion.identity;
+        obj.transform.SetParent(faceRoot, true);
+
         ArrowView view = obj.GetComponent<ArrowView>();
         view.gridPos = pos;
+
         view.SetDirection(grid[pos.x, pos.y].direction);
+
         viewMap[pos] = view;
-       
     }
 
     Vector3 GridToWorld(Vector2Int pos)
@@ -230,10 +243,11 @@ public class GridManager : MonoBehaviour
             if (currentLevelIndex >= unlockedLevel)
             {
                 unlockedLevel = currentLevelIndex + 1;
-
                 PlayerPrefs.SetInt("UnlockedLevel", unlockedLevel);
                 PlayerPrefs.Save();
             }
+
+            cubeController.gameObject.SetActive(false); // 👈 thêm dòng này
 
             uIManager.ShowWin(stars);
         }
@@ -252,6 +266,7 @@ public class GridManager : MonoBehaviour
     }
     public void ResetLevel()
     {
+        cubeController.gameObject.SetActive(true);
         stepCount = 0;
         isMoving = false;
 
