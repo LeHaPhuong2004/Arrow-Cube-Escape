@@ -1,13 +1,16 @@
-using UnityEngine;
-
+﻿using UnityEngine;
+using DG.Tweening;
 public class ArrowView : MonoBehaviour
 {
     public Vector2Int gridPos;
-
+    public void PlayBlockedFeedback()
+    {
+        transform.DOShakePosition(0.2f, 0.2f, 10, 90, false, true);
+    }
     public void SetDirection(Direction dir)
     {
         float angle = 0f;
-
+        //xoay mui ten theo huong no di voi tieu chuan mui ten huong y+
         switch (dir)
         {
             case Direction.Up:
