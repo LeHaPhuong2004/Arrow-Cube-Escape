@@ -16,16 +16,42 @@ MonoBehaviour:
   gridSize: 5
   arrows:
   - position: {x: 4, y: 2}
+    zOffset: 0
     direction: 3
+    face: 2
   - position: {x: 2, y: 3}
+    zOffset: 0
     direction: 4
+    face: 0
   - position: {x: 4, y: 3}
+    zOffset: 0
     direction: 1
+    face: 1
   - position: {x: 2, y: 2}
+    zOffset: 0
     direction: 1
+    face: 5
   - position: {x: 3, y: 2}
+    zOffset: 0
     direction: 2
+    face: 0
   - position: {x: 2, y: 1}
+    zOffset: 0
     direction: 3
+    face: 0
   - position: {x: 3, y: 4}
-    direction: 3
+    zOffset: 0
+    direction: 4
+    face: 0
+  - position: {x: 2, y: 3}
+    zOffset: 0
+    direction: 1
+    face: 3
+  - position: {x: 1, y: 2}
+    zOffset: 0
+    direction: 4
+    face: 4
+  - position: {x: 4, y: 4}
+    zOffset: 0
+    direction: 2
+    face: 2

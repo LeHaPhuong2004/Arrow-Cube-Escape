@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class InputHandler : MonoBehaviour
 {
@@ -7,7 +7,6 @@ public class InputHandler : MonoBehaviour
 
     void Update()
     {
-       
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
@@ -18,10 +17,10 @@ public class InputHandler : MonoBehaviour
 
                 if (arrow != null)
                 {
-                    gridManager.OnArrowClicked(arrow.gridPos);
+                
+                    gridManager.OnArrowClicked(arrow.gridPos, arrow.face);
                 }
             }
         }
     }
-
 }
