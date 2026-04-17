@@ -7,8 +7,17 @@ public class ArrowSpawnData
     public Vector2Int position;
     public float zOffset; 
     public Direction direction;
+    public FaceType face; 
 }
-
+public enum FaceType
+{
+    Front,
+    Back,
+    Left,
+    Right,
+    Top,
+    Bottom
+}
 [CreateAssetMenu(fileName = "LevelData", menuName = "Game/Level")]
 public class LevelData : ScriptableObject
 {
