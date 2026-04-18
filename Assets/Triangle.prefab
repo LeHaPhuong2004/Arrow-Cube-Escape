@@ -106,6 +106,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArrowView
   gridPos: {x: 0, y: 0}
+  sr: {fileID: 1418816582799222995}
+  face: 0
 --- !u!65 &4167087049842423950
 BoxCollider:
   m_ObjectHideFlags: 0

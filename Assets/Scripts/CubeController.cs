@@ -8,10 +8,13 @@ public class CubeController : MonoBehaviour
     private Vector3 lastMousePos;
     public float sensitivity = 0.2f;
     public Transform faceRoot;
-
+    private Vector2 velocity;
+    public float smoothTime = 0.1f;
+    public float damping = 5f;
     void Update()
     {
         faceRoot.rotation = cube.rotation;
+
         if (Input.GetMouseButtonDown(0))
         {
             lastMousePos = Input.mousePosition;
@@ -21,14 +24,15 @@ public class CubeController : MonoBehaviour
         {
             Vector3 delta = Input.mousePosition - lastMousePos;
 
-            float rotX = -delta.y * sensitivity;
-            float rotY = delta.x * sensitivity;
-
-            cube.Rotate(Vector3.right, rotX, Space.World);
-            cube.Rotate(Vector3.up, rotY, Space.World);
+            velocity = new Vector2(-delta.y, delta.x) * sensitivity;
 
             lastMousePos = Input.mousePosition;
         }
+ 
+        cube.Rotate(Vector3.right, velocity.x * Time.deltaTime * 100f, Space.World);
+        cube.Rotate(Vector3.up, velocity.y * Time.deltaTime * 100f, Space.World);
+
+        velocity = Vector2.Lerp(velocity, Vector2.zero, Time.deltaTime * damping);
     }
     public void RotateLeft()
     {
@@ -66,11 +70,23 @@ public class CubeController : MonoBehaviour
         while (t < 1)
         {
             t += Time.deltaTime / rotateDuration;
-            cube.rotation = Quaternion.Slerp(startRot, endRot, t);
+
+            // 🎯 ease-out
+            float easedT = Mathf.SmoothStep(0, 1, t);
+
+            cube.rotation = Quaternion.Slerp(startRot, endRot, easedT);
+
             yield return null;
         }
 
-        cube.rotation = endRot;
+        Vector3 euler = cube.rotation.eulerAngles;
+
+        euler.x = Mathf.Round(euler.x / 90f) * 90f;
+        euler.y = Mathf.Round(euler.y / 90f) * 90f;
+        euler.z = Mathf.Round(euler.z / 90f) * 90f;
+
+        cube.rotation = Quaternion.Euler(euler);
+
         isRotating = false;
     }
 
