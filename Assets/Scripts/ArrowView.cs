@@ -1,16 +1,41 @@
 ﻿using UnityEngine;
 using DG.Tweening;
+using System.Collections;
 
 public class ArrowView : MonoBehaviour
 {
     public Vector2Int gridPos;
+    public SpriteRenderer sr;
 
- 
     public FaceType face;
 
     public void PlayBlockedFeedback()
     {
-        transform.DOShakePosition(0.2f, 0.2f, 10, 90, false, true);
+        StopAllCoroutines();
+        StartCoroutine(BlockedEffect());
+    }
+
+    IEnumerator BlockedEffect()
+    {
+        if (sr == null) yield break;
+
+        Color originalColor = sr.color;
+        Vector3 originalPos = transform.localPosition;  
+        sr.color = Color.red;
+
+        float duration = 0.15f;
+        float elapsed = 0f;
+        float strength = 0.08f;
+
+        while (elapsed < duration)
+        {
+            transform.localPosition = originalPos + (Vector3)Random.insideUnitCircle * strength;
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.localPosition = originalPos;
+      
     }
 
     public void SetDirection(Direction dir)

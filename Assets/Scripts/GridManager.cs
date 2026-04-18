@@ -2,7 +2,6 @@
 using UnityEngine;
 using DG.Tweening;
 using System.Collections;
-
 public class GridManager : MonoBehaviour
 {
     public UIManager uIManager;
@@ -23,14 +22,12 @@ public class GridManager : MonoBehaviour
     public Transform rightFace;
     public Transform topFace;
     public Transform bottomFace;
-
     void Start()
     {
         PlayerPrefs.DeleteAll();
         unlockedLevel = PlayerPrefs.GetInt("UnlockedLevel", 0);
     }
-
-    Transform GetFaceRoot(FaceType face)
+  Transform GetFaceRoot(FaceType face)
     {
         switch (face)
         {
@@ -43,7 +40,6 @@ public class GridManager : MonoBehaviour
             default: return frontFace;
         }
     }
-
     void InitGrid()
     {
         grids.Clear();
@@ -52,16 +48,13 @@ public class GridManager : MonoBehaviour
         {
             grids[face] = new ArrowData[currentLevel.gridSize, currentLevel.gridSize];
         }
-
         foreach (var arrow in currentLevel.arrows)
         {
             grids[arrow.face][arrow.position.x, arrow.position.y] =
                 new ArrowData(arrow.direction);
         }
-
         SpawnAllArrows();
     }
-
     void SpawnAllArrows()
     {
         foreach (var arrow in currentLevel.arrows)
@@ -69,121 +62,108 @@ public class GridManager : MonoBehaviour
             SpawnArrow(arrow);
         }
     }
-
     void SpawnArrow(ArrowSpawnData arrow)
     {
         GameObject obj = Instantiate(arrowPrefab);
-
         Transform face = GetFaceRoot(arrow.face);
         obj.transform.SetParent(face, false);
-
         Vector3 localPos = GridToLocal(arrow.position);
         localPos.z += arrow.zOffset;
-
         obj.transform.localPosition = localPos;
         obj.transform.localRotation = Quaternion.identity;
-
         ArrowView view = obj.GetComponent<ArrowView>();
         view.gridPos = arrow.position;
         view.face = arrow.face;
-        view.SetDirection(arrow.direction);
-
+       view.SetDirection(arrow.direction);
         views.Add(view);
     }
     Vector3 GridToLocal(Vector2Int pos)
     {
         float offset = (currentLevel.gridSize - 1) * cellSize / 2f;
-
         float x = pos.x * cellSize - offset;
         float y = pos.y * cellSize - offset;
-
         return new Vector3(x, y, 0);
     }
     public void OnArrowClicked(Vector2Int pos, FaceType face)
     {
         if (isMoving) return;
-
+        var v = GetView(pos, face);
+        if (v != null)
+        {
+            v.transform.DOPunchScale(Vector3.one * 0.2f, 0.15f, 5, 0.5f);
+        }
         var path = GetSlidePath(pos, face);
-
         stepCount++;
         uIManager.UpdateStep(stepCount, currentLevel.optimalSteps);
-
         if (path == null)
         {
-            Debug.Log("block");
-
-            var v = GetView(pos, face);
+            AudioManager.Instance.PlayBlock();
             if (v != null) v.PlayBlockedFeedback();
-
             return;
         }
-
+        AudioManager.Instance.PlayClick();
         StartCoroutine(MoveArrowAnimated(pos, face, path));
     }
     public List<Vector2Int> GetSlidePath(Vector2Int start, FaceType face)
     {
         List<Vector2Int> path = new List<Vector2Int>();
-
         var grid = grids[face];
-
         ArrowData arrow = grid[start.x, start.y];
-
         if (arrow == null || arrow.isRemoved)
             return null;
-
         Vector2Int dir = GetDirectionVector(arrow.direction);
         Vector2Int current = start;
-
         while (true)
         {
             current += dir;
-
             if (IsOutOfBounds(current))
                 return path;
-
             if (grid[current.x, current.y] != null &&
                 !grid[current.x, current.y].isRemoved)
                 return null;
-
             path.Add(current);
         }
     }
     IEnumerator MoveArrowAnimated(Vector2Int start, FaceType face, List<Vector2Int> path)
     {
         isMoving = true;
-
         ArrowView view = GetView(start, face);
         if (view == null) yield break;
-
+        Vector3 startPos = view.transform.localPosition;
         Vector3 finalPos = GridToLocal(path[path.Count - 1]);
-
-        float duration = 0.4f;
-
+        Vector2Int dir = GetDirectionVector(grids[face][start.x, start.y].direction);
+        float duration = Mathf.Clamp(path.Count * 0.08f, 0.2f, 0.5f);
         view.transform.DOKill();
+        Vector3 anticipationPos = startPos - (Vector3)(Vector2)dir * 0.2f;
+        yield return view.transform
+            .DOLocalMove(anticipationPos, 0.05f)
+            .SetEase(Ease.OutQuad)
+            .WaitForCompletion();
+        view.transform.DOScale(new Vector3(1.2f, 0.8f, 1f), 0.15f);
         view.transform.DOLocalMove(finalPos, duration)
             .SetEase(Ease.OutCubic);
-
         yield return new WaitForSeconds(duration);
-
-        Vector2Int dir = GetDirectionVector(grids[face][start.x, start.y].direction);
-
+        view.transform.DOScale(Vector3.one, 0.1f);
         Vector3 outPos = finalPos + new Vector3(dir.x, dir.y, 0) * cellSize;
-
         view.transform.DOLocalMove(outPos, 0.2f)
             .SetEase(Ease.InQuad);
-
+        view.transform.DOScale(Vector3.zero, 0.2f);
         yield return new WaitForSeconds(0.2f);
-
         grids[face][start.x, start.y].isRemoved = true;
-
         Destroy(view.gameObject);
         views.Remove(view);
-
         isMoving = false;
-
         if (CheckWin())
         {
             int stars = CalculateStars();
+
+            AudioManager.Instance.PlayWin();
+
+            if (VFXManager.Instance != null)
+                VFXManager.Instance.PlayWinEffect();
+
+            Time.timeScale = 0.6f;
+            Invoke(nameof(ResetTime), 0.15f);
 
             if (currentLevelIndex >= unlockedLevel)
             {
@@ -196,6 +176,10 @@ public class GridManager : MonoBehaviour
             uIManager.ShowWin(stars);
         }
     }
+    void ResetTime()
+    {
+        Time.timeScale = 1f;
+    }
     ArrowView GetView(Vector2Int pos, FaceType face)
     {
         foreach (var v in views)
@@ -205,7 +189,6 @@ public class GridManager : MonoBehaviour
         }
         return null;
     }
-
     bool CheckWin()
     {
         foreach (var pair in grids)
@@ -223,7 +206,6 @@ public class GridManager : MonoBehaviour
         }
         return true;
     }
-
     int CalculateStars()
     {
         int optimal = currentLevel.optimalSteps;
@@ -243,20 +225,17 @@ public class GridManager : MonoBehaviour
             default: return Vector2Int.zero;
         }
     }
-
     bool IsOutOfBounds(Vector2Int pos)
     {
         return pos.x < 0 || pos.x >= currentLevel.gridSize ||
                pos.y < 0 || pos.y >= currentLevel.gridSize;
     }
-
     public void LoadLevel(int index)
     {
         currentLevelIndex = index;
         currentLevel = levels[index];
         ResetLevel();
     }
-
     public void NextLevel()
     {
         currentLevelIndex++;
@@ -266,12 +245,10 @@ public class GridManager : MonoBehaviour
 
         LoadLevel(currentLevelIndex);
     }
-
     public void RestartLevel()
     {
         ResetLevel();
     }
-
     public void ResetLevel()
     {
         cubeController.gameObject.SetActive(true);
