@@ -10,7 +10,7 @@ public class CameraZoom : MonoBehaviour
 
     public float minFOV = 35f;
     public float maxFOV = 95f;
-
+    public static bool isZooming = false;
     Camera cam;
 
     void Start()
@@ -25,8 +25,11 @@ public class CameraZoom : MonoBehaviour
 
     void Update()
     {
-        if (Input.touchCount >= 2)
+        isZooming = Input.touchCount == 2 || Mathf.Abs(Input.mouseScrollDelta.y) > 0.01f;
+
+        if (Input.touchCount == 2)
         {
+            isZooming = true;
             HandleTouchZoom();
         }
         else
@@ -41,6 +44,7 @@ public class CameraZoom : MonoBehaviour
 
         if (Mathf.Abs(scroll) > 0.01f)
         {
+            isZooming = true; // ✅ thêm dòng này
             ApplyZoom(scroll * zoomSpeedMouse);
         }
     }

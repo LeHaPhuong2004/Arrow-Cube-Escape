@@ -11,24 +11,57 @@ public class CubeController : MonoBehaviour
     private Vector2 velocity;
     public float smoothTime = 0.1f;
     public float damping = 5f;
+
+
     void Update()
     {
+        if (CameraZoom.isZooming || Input.touchCount > 1)
+        {
+            velocity = Vector2.zero;
+            return;
+        }
+
         faceRoot.rotation = cube.rotation;
 
-        if (Input.GetMouseButtonDown(0))
+        // ================= MOBILE =================
+        if (Application.isMobilePlatform)
         {
-            lastMousePos = Input.mousePosition;
+            if (Input.touchCount == 1)
+            {
+                Touch touch = Input.GetTouch(0);
+
+                if (touch.phase == TouchPhase.Began)
+                {
+                    lastMousePos = touch.position;
+                }
+                else if (touch.phase == TouchPhase.Moved)
+                {
+                    Vector3 delta = touch.position - (Vector2)lastMousePos;
+
+                    velocity = new Vector2(delta.y, -delta.x) * sensitivity;
+
+                    lastMousePos = touch.position;
+                }
+            }
+        }
+        // ================= PC =================
+        else
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                lastMousePos = Input.mousePosition;
+            }
+
+            if (Input.GetMouseButton(0))
+            {
+                Vector3 delta = Input.mousePosition - lastMousePos;
+
+                velocity = new Vector2(delta.y, -delta.x) * sensitivity;
+
+                lastMousePos = Input.mousePosition;
+            }
         }
 
-        if (Input.GetMouseButton(0))
-        {
-            Vector3 delta = Input.mousePosition - lastMousePos;
-
-            velocity = new Vector2(-delta.y, delta.x) * sensitivity;
-
-            lastMousePos = Input.mousePosition;
-        }
- 
         cube.Rotate(Vector3.right, velocity.x * Time.deltaTime * 100f, Space.World);
         cube.Rotate(Vector3.up, velocity.y * Time.deltaTime * 100f, Space.World);
 
@@ -71,7 +104,6 @@ public class CubeController : MonoBehaviour
         {
             t += Time.deltaTime / rotateDuration;
 
-            // 🎯 ease-out
             float easedT = Mathf.SmoothStep(0, 1, t);
 
             cube.rotation = Quaternion.Slerp(startRot, endRot, easedT);
