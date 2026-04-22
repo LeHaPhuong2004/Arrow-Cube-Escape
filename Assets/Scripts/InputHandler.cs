@@ -4,7 +4,7 @@ public class InputHandler : MonoBehaviour
 {
     public Camera cam;
     public GridManager gridManager;
-
+   
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -17,8 +17,8 @@ public class InputHandler : MonoBehaviour
 
                 if (arrow != null)
                 {
-                
                     gridManager.OnArrowClicked(arrow.gridPos, arrow.face);
+                  
                 }
             }
         }

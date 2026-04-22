@@ -64,6 +64,7 @@ public class GridManager : MonoBehaviour
     }
     void SpawnArrow(ArrowSpawnData arrow)
     {
+
         GameObject obj = Instantiate(arrowPrefab);
         Transform face = GetFaceRoot(arrow.face);
         obj.transform.SetParent(face, false);
@@ -75,6 +76,7 @@ public class GridManager : MonoBehaviour
         view.gridPos = arrow.position;
         view.face = arrow.face;
        view.SetDirection(arrow.direction);
+
         views.Add(view);
     }
     Vector3 GridToLocal(Vector2Int pos)
@@ -129,41 +131,43 @@ public class GridManager : MonoBehaviour
         isMoving = true;
         ArrowView view = GetView(start, face);
         if (view == null) yield break;
-        Vector3 startPos = view.transform.localPosition;
+
+        // 1. Kích hoạt hiệu ứng rắn
+        view.StartSnakeEffect();
+
         Vector3 finalPos = GridToLocal(path[path.Count - 1]);
-        Vector2Int dir = GetDirectionVector(grids[face][start.x, start.y].direction);
-        float duration = Mathf.Clamp(path.Count * 0.08f, 0.2f, 0.5f);
-        view.transform.DOKill();
-        Vector3 anticipationPos = startPos - (Vector3)(Vector2)dir * 0.2f;
-        yield return view.transform
-            .DOLocalMove(anticipationPos, 0.05f)
-            .SetEase(Ease.OutQuad)
-            .WaitForCompletion();
-        view.transform.DOScale(new Vector3(1.2f, 0.8f, 1f), 0.15f);
-        view.transform.DOLocalMove(finalPos, duration)
-            .SetEase(Ease.OutCubic);
+        float duration = Mathf.Clamp(path.Count * 0.2f, 0.4f, 1.2f);
+
+
+        // 2. Di chuyển: Chỉ nên di chuyển visualRoot hoặc dùng transform nhưng phải cẩn thận
+        // vì LineRenderer đang dùng WorldSpace nên nó sẽ tự "để lại đuôi" khi đầu di chuyển
+        view.transform.DOLocalMove(finalPos, duration).SetEase(Ease.Linear);
+
         yield return new WaitForSeconds(duration);
-        view.transform.DOScale(Vector3.one, 0.1f);
-        Vector3 outPos = finalPos + new Vector3(dir.x, dir.y, 0) * cellSize;
-        view.transform.DOLocalMove(outPos, 0.2f)
-            .SetEase(Ease.InQuad);
-        view.transform.DOScale(Vector3.zero, 0.2f);
+
+        // 3. Xử lý thoát ra ngoài map
+        Vector2Int dirVec = GetDirectionVector(grids[face][start.x, start.y].direction);
+        Vector3 outPos = finalPos + new Vector3(dirVec.x, dirVec.y, 0) * cellSize;
+
+        view.transform.DOLocalMove(outPos, 0.2f).SetEase(Ease.InQuad);
         yield return new WaitForSeconds(0.2f);
+
+        // Dọn dẹp
         grids[face][start.x, start.y].isRemoved = true;
-        Destroy(view.gameObject);
         views.Remove(view);
+        Destroy(view.gameObject);
         isMoving = false;
+
         if (CheckWin())
         {
             int stars = CalculateStars();
 
-            AudioManager.Instance.PlayWin();
-
             if (VFXManager.Instance != null)
+            {
                 VFXManager.Instance.PlayWinEffect();
+            }
 
-            Time.timeScale = 0.6f;
-            Invoke(nameof(ResetTime), 0.15f);
+            AudioManager.Instance.PlayWin();
 
             if (currentLevelIndex >= unlockedLevel)
             {
@@ -172,14 +176,13 @@ public class GridManager : MonoBehaviour
                 PlayerPrefs.Save();
             }
 
-            cubeController.gameObject.SetActive(false);
+            cubeController.gameObject.SetActive(false); 
+            yield return new WaitForSeconds(0.2f);
+
             uIManager.ShowWin(stars);
         }
     }
-    void ResetTime()
-    {
-        Time.timeScale = 1f;
-    }
+
     ArrowView GetView(Vector2Int pos, FaceType face)
     {
         foreach (var v in views)
